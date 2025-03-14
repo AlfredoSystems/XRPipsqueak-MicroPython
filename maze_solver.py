@@ -27,8 +27,6 @@ tof1.set_Vcsel_pulse_period(tof1.vcsel_period_type[0], 12)
 tof0.set_Vcsel_pulse_period(tof0.vcsel_period_type[1], 8)
 tof1.set_Vcsel_pulse_period(tof1.vcsel_period_type[1], 8)
 
-
-
 print("waiting for button")
 board.led_blink(4)
 
@@ -42,12 +40,9 @@ board.led_blink(4)
 #print("starting")
 #board.led_off()
 
-
-#for sides in range(4):
-#    maze.straight(182, 0.3, 10) #mm, effort, seconds
-#    time.sleep(0.05)
-#    maze.turn(90, 0.3, 100) #degrees, effort, seconds
-#    time.sleep(0.05)
+#maze.testEncoders()
+#maze.square_drive()
+    
 
 maze.straight(182/2, 0.3, 10)
 
