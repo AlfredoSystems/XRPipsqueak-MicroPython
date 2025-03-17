@@ -1,10 +1,10 @@
 from .board import Board
-from .differential_drive import DifferentialDrive
+#from .differential_drive import DifferentialDrive
 from .motor import SinglePWMMotor, DualPWMMotor
 from .encoder import Encoder
 from .encoded_motor import EncodedMotor
 from .rangefinder import Rangefinder
-from .imu import IMU
+#from .imu import IMU
 #from .reflectance import Reflectance
 #from .servo import Servo
 #from .webserver import Webserver
@@ -19,8 +19,8 @@ Run "from XRPLib.defaults import *" to use
 #right_motor = EncodedMotor.get_default_encoded_motor(index=2)
 #motor_three = EncodedMotor.get_default_encoded_motor(index=3)
 #motor_four = EncodedMotor.get_default_encoded_motor(index=4)
-imu = IMU.get_default_imu()
-drivetrain = DifferentialDrive.get_default_differential_drive()
+#imu = IMU.get_default_imu()
+#drivetrain = DifferentialDrive.get_default_differential_drive()
 #rangefinder = Rangefinder.get_default_rangefinder()
 rangefinder = Rangefinder(26, 27)
 #reflectance = Reflectance.get_default_reflectance()

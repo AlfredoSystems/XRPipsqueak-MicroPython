@@ -1,4 +1,5 @@
 from XRPLib.defaults import *
+from lib.XRPLib.imu import IMU
 
 #from lib.XRPLib.pid import PID
 #from lib.XRPLib.timeout import Timeout
@@ -8,11 +9,18 @@ from machine import I2C,Pin
 import time
 import math
 
-from twin_potentiometers import *
 from maze_profile_agent import *
 
 print("all modules imported")
 board.led_blink(16)
+
+i2c0 = I2C(0, scl=Pin(21), sda=Pin(20), freq=400000)
+time.sleep(0.1)
+i2c1 = I2C(1, scl=Pin(19), sda=Pin(18), freq=400000)
+time.sleep(0.1)
+
+imu = IMU(i2c1)
+imu.calibrate()
 
 #ToF: 50 -> too close, 70 -> wall perfect, 90 -> wall max, 230 -> open
 #Sonar: 2 - too close, 3 - wall perfect, 13 -> wall detected from cell entrance, 30, no wall
@@ -30,73 +38,79 @@ forward_tu = 1/(480/2)
 forward_kp = 0.8*forward_ku
 forward_kd =  0.1 * forward_ku * forward_tu
 
-angle_ku = 0.2*0.25
+angle_ku = 0.2*0.25*0.75
 angle_tu = 1/(600/2)
 angle_kp = 0.8*angle_ku
 angle_kd = 0.1 * angle_ku * angle_tu
 
-agent = MazeProfileAgent(maze_motor_left, maze_motor_right, forward_kp, forward_kd, angle_kp, angle_kd)
+agent = MazeProfileAgent(maze_motor_left, maze_motor_right, forward_kp, forward_kd, angle_kp, angle_kd, imu)
 
-i2c0 = I2C(0, scl=Pin(21), sda=Pin(20), freq=50000)
-i2c1 = I2C(1, scl=Pin(19), sda=Pin(18), freq=50000)
-time.sleep(0.1)
 tof0 = VL53L0X(i2c0)
 tof1 = VL53L0X(i2c1)
 time.sleep(0.1)
 tof0.set_measurement_timing_budget(40000)
 tof1.set_measurement_timing_budget(40000)
-time.sleep(0.1)
 tof0.set_Vcsel_pulse_period(tof0.vcsel_period_type[0], 12)
 tof1.set_Vcsel_pulse_period(tof1.vcsel_period_type[0], 12)
-time.sleep(0.1)
 tof0.set_Vcsel_pulse_period(tof0.vcsel_period_type[1], 8)
 tof1.set_Vcsel_pulse_period(tof1.vcsel_period_type[1], 8)
+time.sleep(0.1)
 
 board.led_blink(4)
 
-# Define motion profiles: [distance (mm), max speed, start speed, end speed, acceleration]
-profiles = [
-    #[mm, m/s, m/s, m/s, m/s^2],[deg, deg/s, deg/s, deg/s, deg/s^2]
-    #[[182*4, 200, 100, 0, 800],[90, 90, 90, 0, 0.25*90]], 
-    [[0, 0, 0, 0, 800],[90, 800, 200, 0, 4000]], 
-    #[[200, 800, 200, 0, 3200],[0, 0, 0, 0, 10000000]],
 
-]
+straight_h = [[182/2, 800, 400, 50, 3200, 1],[0, 1600, 0, 0, 2*3200, 1]]
+straight_1 = [[182, 800, 400, 100, 3200, 1],[0, 1600, 0, 0, 2*3200, 1]]
+
+turn_left = [[0, 800, 0, 0, 3200, 1],[90, 1600, 400, 200, 2*6400, -1]]
+turn_right = [[0, 800, 0, 0, 3200, 1],[90, 1600, 400, 200, 2*6400, 1]]
+# Define motion profiles: [distance (mm), max speed, start speed, end_speed, acceleration]
+
 
 #agent.hold_stability(True, True)
 
-
 # Execute the motion profiles
-#maze_motor_left.set_effort(0.3)
-#maze_motor_right.set_effort(0.3)
-agent.execute_profiles(profiles)
+#agent.execute_profile([[135, 800, 150, 100, 3200, 1],[90, 1600, 400, 200, 6400, 1]])
+#agent.execute_profiles(square)
 
+#maze_motor_left.set_effort(0)
+#maze_motor_right.set_effort(0)
+
+agent.execute_profiles([straight_h])
+time.sleep(0.1)
 
 while True:
-    pass
     #maze_motor_left.set_effort((get_PotADC1() * 2) -1)
     #maze_motor_right.set_effort((get_PotADC2() * 2) -1)
     #print(agent.get_avg_position_mm(), agent.get_avg_angle_deg())
-#print(tof0.ping(), rangefinder.distance(), tof1.ping())
-    
-#     if(tof0.ping() > 100):
-#         #forward left forward
-#         maze.straight(182/2 + 5, 0.3, 10)
-#         maze.turn(90, 0.3, 10)
-#         maze.straight(182/2, 0.3, 10)
-        
-#     elif(tof1.ping() > 100):
-#         #forward right forward
-#         maze.straight(182/2 + 5, 0.3, 10)
-#         maze.turn(-90, 0.3, 10)
-#         maze.straight(182/2, 0.3, 10)
-        
-#     elif(rangefinder.distance() > 20):
-#         #forward
-#         maze.straight(182, 0.3, 10)
-        
-#     else:
-#         #turn around
-#         maze.turn(180, 0.3, 10)
+    print(tof0.ping(), rangefinder.distance(), tof1.ping())
 
-#     time.sleep(0.1)
+    if(tof0.ping() > 150):
+        #forward left forward
+        agent.execute_profiles([
+            straight_h,
+            turn_left,
+            straight_h,
+            ])
+
+    elif(tof1.ping() > 150):
+        #forward right forward
+        agent.execute_profiles([
+            straight_h,
+            turn_right,
+            straight_h,
+            ])
+
+    elif(rangefinder.distance() > 20):
+        #forward
+        agent.execute_profiles([
+            straight_1,
+            ])        
+    else:
+        #turn around
+        agent.execute_profiles([
+            turn_right,
+            turn_right,
+            ])    
+
+    time.sleep(0.1)
