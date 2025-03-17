@@ -154,6 +154,49 @@ class MazeProfileAgent:
             
             time.sleep(.01)
 
+        def move_left(self,center_dist, left_dist, right_dist):
+            if(center_dist < 20):
+                dist_offset = (center_dist - 13) * 0.1 #cm to mm
+            
+            if(right_dist < 150):
+                angle_offset = (right_dist - 70) * (5/20) #20 units = 5 deg correction?
+            
+            self.execute_profiles([
+                [[182/2 + dist_offset, 800, 400, 50, 3200, 1],[0 + angle_offset, 1600, 0, 0, 2*3200, 1]],
+                [[0, 800, 0, 0, 3200, 1],[90, 1600, 400, 200, 2*6400, -1]],
+                [[182/2, 800, 400, 50, 3200, 1],[0, 1600, 0, 0, 2*3200, 1]],
+                ])
+
+        def move_forward(self,center_dist, left_dist, right_dist):
+            if(left_dist < 150):
+                angle_offset_left = (left_dist - 70) * (5/20) #20 units = 5 deg correction?
+            
+            if(right_dist < 150):
+                angle_offset_right = (left_dist - 70) * (5/20) #20 units = 5 deg correction?
+        
+            self.execute_profiles([
+                [[182/2, 800, 400, 50, 3200, 1],[0 + angle_offset_right - angle_offset_left, 1600, 0, 0, 2*3200, 1]],
+                ])     
+        
+        def move_right(self,center_dist, left_dist, right_dist):
+            if(center_dist < 20):
+                dist_offset = (center_dist - 13) * 0.1 #cm to mm
+            
+            if(left_dist < 150):
+                angle_offset = (left_dist - 70) * (5/20) #20 units = 5 deg correction?
+
+            self.execute_profiles([
+                [[182/2 + dist_offset, 800, 400, 50, 3200, 1],[0 + angle_offset, 1600, 0, 0, 2*3200, 1]],
+                [[0, 800, 0, 0, 3200, 1],[90, 1600, 400, 200, 2*6400, 1]],
+                [[182/2, 800, 400, 50, 3200, 1],[0, 1600, 0, 0, 2*3200, 1]],
+                ])
+    
+        def move_turn_around(self,center_dist, left_dist, right_dist):
+            self.execute_profiles([
+                [[0, 800, 0, 0, 3200, 1],[180, 1600, 400, 200, 2*6400, 1]],
+                ])    
+
+
     def hold_stability(self, hold_position=True, hold_angle=True):
     
         start_position = self.get_avg_position_mm()

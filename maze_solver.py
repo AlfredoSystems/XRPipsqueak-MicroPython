@@ -66,12 +66,7 @@ turn_left = [[0, 800, 0, 0, 3200, 1],[90, 1600, 400, 200, 2*6400, -1]]
 turn_right = [[0, 800, 0, 0, 3200, 1],[90, 1600, 400, 200, 2*6400, 1]]
 # Define motion profiles: [distance (mm), max speed, start speed, end_speed, acceleration]
 
-
 #agent.hold_stability(True, True)
-
-# Execute the motion profiles
-#agent.execute_profile([[135, 800, 150, 100, 3200, 1],[90, 1600, 400, 200, 6400, 1]])
-#agent.execute_profiles(square)
 
 #maze_motor_left.set_effort(0)
 #maze_motor_right.set_effort(0)
@@ -83,34 +78,58 @@ while True:
     #maze_motor_left.set_effort((get_PotADC1() * 2) -1)
     #maze_motor_right.set_effort((get_PotADC2() * 2) -1)
     #print(agent.get_avg_position_mm(), agent.get_avg_angle_deg())
-    print(tof0.ping(), rangefinder.distance(), tof1.ping())
+    center_dist = rangefinder.distance()
+    left_dist = tof0.ping()
+    right_dist = tof1.ping()
+    print(left_dist, center_dist, right_dist)
 
-    if(tof0.ping() > 150):
+    if(left_dist > 150):
         #forward left forward
+
+        if(center_dist < 20):
+            dist_offset = (center_dist - 13) * 0.1 #cm to mm
+        
+        if(right_dist < 150):
+            angle_offset = (right_dist - 70) * (5/20) #20 units = 5 deg correction?
+        
         agent.execute_profiles([
-            straight_h,
+            [[182/2 + dist_offset, 800, 400, 50, 3200, 1],[0 + angle_offset, 1600, 0, 0, 2*3200, 1]],
             turn_left,
             straight_h,
             ])
 
-    elif(tof1.ping() > 150):
+    elif(center_dist > 20):
+        #forward
+
+        if(left_dist < 150):
+            angle_offset_left = (left_dist - 70) * (5/20) #20 units = 5 deg correction?
+        
+        if(right_dist < 150):
+            angle_offset_right = (left_dist - 70) * (5/20) #20 units = 5 deg correction?
+    
+        agent.execute_profiles([
+            [[182/2, 800, 400, 50, 3200, 1],[0 + angle_offset_right - angle_offset_left, 1600, 0, 0, 2*3200, 1]],
+            ])     
+    
+    elif(right_dist > 150):
+
+        if(center_dist < 20):
+            dist_offset = (center_dist - 13) * 0.1 #cm to mm
+        
+        if(left_dist < 150):
+            angle_offset = (left_dist - 70) * (5/20) #20 units = 5 deg correction?
+
         #forward right forward
         agent.execute_profiles([
-            straight_h,
+            [[182/2 + dist_offset, 800, 400, 50, 3200, 1],[0 + angle_offset, 1600, 0, 0, 2*3200, 1]],
             turn_right,
             straight_h,
             ])
-
-    elif(rangefinder.distance() > 20):
-        #forward
-        agent.execute_profiles([
-            straight_1,
-            ])        
+   
     else:
         #turn around
         agent.execute_profiles([
-            turn_right,
-            turn_right,
+            [[0, 800, 0, 0, 3200, 1],[180, 1600, 400, 200, 2*6400, 1]],
             ])    
 
     time.sleep(0.1)
