@@ -8,20 +8,34 @@ from machine import I2C,Pin
 import time
 import math
 
+from twin_potentiometers import *
 from maze_profile_agent import *
+
+print("all modules imported")
+board.led_blink(16)
 
 #ToF: 50 -> too close, 70 -> wall perfect, 90 -> wall max, 230 -> open
 #Sonar: 2 - too close, 3 - wall perfect, 13 -> wall detected from cell entrance, 30, no wall
 maze_motor_left = EncodedMotor(
-                    Motor(2, 3),
+                    SinglePWMMotor(2, 3),
                     Encoder(2, 1, 0, flip_dir=True)
                 )
 maze_motor_right = EncodedMotor(
-                    Motor(10, 11, flip_dir=True),
+                    SinglePWMMotor(10, 11, flip_dir=True),
                     Encoder(3, 9, 8, flip_dir=True)
                 )
+                
+forward_ku = 0.28*0.25
+forward_tu = 1/(480/2)
+forward_kp = 0.8*forward_ku
+forward_kd =  0.1 * forward_ku * forward_tu
 
-agent = MazeProfileAgent(maze_motor_left, maze_motor_right)
+angle_ku = 0.2*0.25
+angle_tu = 1/(600/2)
+angle_kp = 0.8*angle_ku
+angle_kd = 0.1 * angle_ku * angle_tu
+
+agent = MazeProfileAgent(maze_motor_left, maze_motor_right, forward_kp, forward_kd, angle_kp, angle_kd)
 
 i2c0 = I2C(0, scl=Pin(21), sda=Pin(20), freq=50000)
 i2c1 = I2C(1, scl=Pin(19), sda=Pin(18), freq=50000)
@@ -39,32 +53,31 @@ tof0.set_Vcsel_pulse_period(tof0.vcsel_period_type[1], 8)
 tof1.set_Vcsel_pulse_period(tof1.vcsel_period_type[1], 8)
 
 board.led_blink(4)
-# Wait until user command before running
-while not board.is_button_pressed():
-    time.sleep(.01)
-# Wait until user to release button before running
-while board.is_button_pressed():
-    time.sleep(.01)
-board.led_off()
 
-#maze.testEncoders()
-#maze.square_drive()
-
-# Define motion profiles: [distance (mm), max speed, end speed, acceleration]
+# Define motion profiles: [distance (mm), max speed, start speed, end speed, acceleration]
 profiles = [
-    [182, 200, 0, 0, 600], #drive straight 182mm
-    #["line", 182/2, 0.8, 0.5, 0.2],  # Move 200mm, max speed 0.8, end speed 0.5, acceleration 0.2
-    #["turn", 90, 182/2, 0.5, 0.0, 0.3],  # Move 100mm, max speed 0.5, stop at the end, acceleration 0.3
-    #["line", 182/2, 0.6, 0.2, 0.25]  # Move backward 150mm, max speed 0.6, end speed 0.2, acceleration 0.25
+    #[mm, m/s, m/s, m/s, m/s^2],[deg, deg/s, deg/s, deg/s, deg/s^2]
+    #[[182*4, 200, 100, 0, 800],[90, 90, 90, 0, 0.25*90]], 
+    [[0, 0, 0, 0, 800],[90, 800, 200, 0, 4000]], 
+    #[[200, 800, 200, 0, 3200],[0, 0, 0, 0, 10000000]],
+
 ]
 
+#agent.hold_stability(True, True)
+
+
 # Execute the motion profiles
+#maze_motor_left.set_effort(0.3)
+#maze_motor_right.set_effort(0.3)
 agent.execute_profiles(profiles)
 
-# maze.straight(182/2, 0.3, 10)
 
-# while True:
-#     print(tof0.ping(), rangefinder.distance(), tof1.ping())
+while True:
+    pass
+    #maze_motor_left.set_effort((get_PotADC1() * 2) -1)
+    #maze_motor_right.set_effort((get_PotADC2() * 2) -1)
+    #print(agent.get_avg_position_mm(), agent.get_avg_angle_deg())
+#print(tof0.ping(), rangefinder.distance(), tof1.ping())
     
 #     if(tof0.ping() > 100):
 #         #forward left forward
